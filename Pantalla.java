@@ -7,6 +7,8 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Body;
@@ -31,6 +33,7 @@ public class Pantalla extends InputAdapter implements Screen {
 	OrthographicCamera camera;
 	Viewport viewport;
 	SpriteBatch lote;
+	ShapeRenderer dibujante;
 	
 	//box2D
 	World world;
@@ -63,15 +66,12 @@ public class Pantalla extends InputAdapter implements Screen {
 	Array<Integer> ies = new Array<Integer>();
 	
 	
-	
-	
-	
-	
-	
+	/***************** CONSTRUCTOR ******************/
 	public Pantalla (Primes juego){ //constructor de la pantalla
 		this.juego = juego;
 		
 		lote = new SpriteBatch();
+		dibujante = new ShapeRenderer();
 		
 		camera = new OrthographicCamera();
 		viewport = new FitViewport(screenW,screenH,camera);
@@ -125,7 +125,7 @@ public class Pantalla extends InputAdapter implements Screen {
 		click.y = screenY;
 		viewport.unproject(click); //IMPORTANTE!!!! Si deshaces la proyección desde la cámara las barras negras se lo cargarán todo. Siempre desde viewport.
 		if(button == 1){
-			nuevaBola(click.x,click.y,0.3f);
+			nuevaBola(click.x,click.y,3);
 		}else{
 			clicado = null; //detección de click sobre un cuerpo.
 			world.QueryAABB(callback, click.x - 0.0001f, click.y-0.0001f, click.x+0.0001f, click.y+0.0001f);
@@ -147,22 +147,21 @@ public class Pantalla extends InputAdapter implements Screen {
 	}
 	
 	/************ NUEVA BOLA ************/
-	public void nuevaBola(float x, float y, float r){
+	public void nuevaBola(float x, float y, int num){
 		
 		bodyDef.position.set(x,y); //dónde voy a ponerlo (pin de las coordenadas que va a tener).
 		
 		bolas.add(world.createBody(bodyDef));
 
 		circle = new CircleShape();
-		circle.setRadius(r);
+		circle.setRadius(num/10f);
 		fixtureDef.shape = circle; 
 		
 		galletas.add(bolas.get(bolas.size-1).createFixture(fixtureDef)); //Recortamos la galleta y la añadimos al cuerpo.
 		
-
 		circle.dispose();
 		
-		boludos.add(new Boludo());
+		boludos.add(new Boludo(num,x,y));
 		bolas.get(bolas.size-1).setUserData(boludos.get(boludos.size-1));
 		System.out.println("Hay " + bolas.size + " bolas, " + galletas.size + " galletas y " + boludos.size + " boludos.");
 	}
@@ -175,11 +174,24 @@ public class Pantalla extends InputAdapter implements Screen {
 		camera.update();
 		
 		lote.setProjectionMatrix(camera.combined);
+		dibujante.setProjectionMatrix(camera.combined);
 		
 		lote.begin();
 			lote.draw(Recursos.foto, 0, 0, screenW,screenH);
 		lote.end();
 		
+		dibujante.begin(ShapeType.Filled);
+			for(Boludo bol : boludos){
+				if(bol.porDestruir){
+					dibujante.setColor(1f, 0.2f, 0.2f, 1f);
+				}else{
+					dibujante.setColor(0.2f, 0f, 0.8f, 1f);
+				}
+				dibujante.circle(bol.x, bol.y, bol.r, 100);
+			}
+		dibujante.end();
+		
+		/**- - - - - - - - - Box2D - - - - - - - -  **/
 		doPhysicsStep(delta);
 		debugRenderer.render(world, camera.combined);
 		
@@ -207,6 +219,12 @@ public class Pantalla extends InputAdapter implements Screen {
 				System.out.println("Removed: "+j);
 			}
 			ies.clear();
+		}
+		/** - - - de la bola al boludo - - - **/
+		for(Body b : bolas){
+			Boludo bol = (Boludo) b.getUserData();
+			bol.x = b.getPosition().x;
+			bol.y = b.getPosition().y;
 		}
 	}
 	/************* RESIZE *************/
