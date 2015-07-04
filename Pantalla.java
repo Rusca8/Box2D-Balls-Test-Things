@@ -164,7 +164,7 @@ public class Pantalla extends InputAdapter implements Screen {
 		
 		boludos.add(new Boludo());
 		bolas.get(bolas.size-1).setUserData(boludos.get(boludos.size-1));
-		System.out.println("Hay " + bolas.size + " bolas, " + galletas.size + " galletas.");
+		System.out.println("Hay " + bolas.size + " bolas, " + galletas.size + " galletas y " + boludos.size + " boludos.");
 	}
 	/********************** RENDER method *********************/
 	@Override
@@ -203,6 +203,7 @@ public class Pantalla extends InputAdapter implements Screen {
 			for(Integer j : ies){ //borro de las listas las cosas anuladas. Como he empezado por la última no me cargo los índices de las siguientes. A que soy listo? :D
 				bolas.removeIndex(j);
 				galletas.removeIndex(j);
+				boludos.removeIndex(j);
 				System.out.println("Removed: "+j);
 			}
 			ies.clear();
